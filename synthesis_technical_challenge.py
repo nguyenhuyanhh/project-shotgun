@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_PATH = os.path.join(CUR_DIR, 'config.json')
+TEMP_PATH = os.path.join(CUR_DIR, 'temp.json')
 
 
 def old_crawler():
@@ -28,15 +29,23 @@ def old_crawler():
         print(div)
 
 
-def new_crawler():
+def new_crawler(limit=100):
     """Crawling the Facebook page using Facebook Graph API."""
     # Get access token from config.json
     with open(CONFIG_PATH, 'r') as json_:
         config = json.load(json_)
 
+    # Get data from Graph API
+    data = []
     url = 'https://graph.facebook.com/v2.11/bobbibrown.sg/posts'
     response = requests.get(url=url, params=config).json()
-    print(response)
+    while len(data) <= limit and 'paging' in response and 'next' in response['paging']:
+        data += response['data']
+        response = requests.get(url=response['paging']['next']).json()
+
+    # Output data to temporary file
+    with open(TEMP_PATH, 'w') as json_:
+        json.dump(data, json_, indent=4, sort_keys=True)
 
 
 if __name__ == '__main__':
