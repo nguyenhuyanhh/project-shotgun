@@ -1,1 +1,4 @@
 .vscode/
+
+# Facebook Graph API User Access Token
+config.json
