@@ -37,10 +37,13 @@ def new_crawler(limit=100):
     """Crawling the Facebook page using Facebook Graph API."""
     import pandas as pd
 
+    post_fields = ['id', 'created_time',
+                   'type', 'object_id', 'message', 'story']
+
     # Get access token from config.json
     with open(CONFIG_PATH, 'r') as json_:
         config = json.load(json_)
-    config['fields'] = 'id,created_time,message,link,story'
+    config['fields'] = ','.join(post_fields)
 
     # Get posts from Graph API
     data = []
@@ -71,6 +74,10 @@ def new_crawler(limit=100):
 
     # Output data to csv
     df_ = pd.DataFrame(data)
+    cols = list(set(df_.columns.tolist()) - set(post_fields))
+    # Put post_fields at the beginning of output
+    df_ = df_[post_fields + sorted(cols)]
+    df_['shares'] = df_['shares'].fillna(0).astype(int)
     df_.to_csv(os.path.join(CUR_DIR, 'output.csv'), index=False)
 
 
