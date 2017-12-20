@@ -47,6 +47,7 @@ def new_crawler(limit=100):
 
     # Get posts from Graph API
     data = []
+    # https://graph.facebook.com/v2.11/bobbibrown.sg/posts
     url = GRAPH_API_HEADER + 'bobbibrown.sg/posts'
     response = requests.get(url=url, params=config).json()
     while len(data) < limit and 'paging' in response and 'next' in response['paging']:
@@ -67,6 +68,20 @@ def new_crawler(limit=100):
         post['comments'] = response['comments']['summary']['total_count']
         if 'shares' in response:  # shares only available for some post types
             post['shares'] = response['shares']['count']
+        # Get raw photos/ videos from Graph API
+        config_obj = {}
+        config_obj['access_token'] = config['access_token']
+        if post['type'] == 'photo':
+            url = GRAPH_API_HEADER + post['object_id']
+            config_obj['fields'] = 'images'
+            response = requests.get(url=url, params=config_obj).json()
+            # highest resolution photo available
+            post['data_photo'] = response['images'][0]['source']
+        elif post['type'] == 'video':
+            url = GRAPH_API_HEADER + post['object_id']
+            config_obj['fields'] = 'source'
+            response = requests.get(url=url, params=config_obj).json()
+            post['data_video'] = response['source']
 
     # Output data to temporary file
     with open(TEMP_PATH, 'w') as json_:
